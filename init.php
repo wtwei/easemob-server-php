@@ -19,5 +19,5 @@ if (!function_exists('mb_detect_encoding')) {
 
 require(dirname(__FILE__) . '/src/Easemob/Im.php');
 require(dirname(__FILE__) . '/src/Easemob/Error/Error.php');
-require(dirname(__FILE__) . '/src/Easemob/Base.php');
+require(dirname(__FILE__) . '/src/Easemob/Common.php');
 require(dirname(__FILE__) . '/src/Easemob/AccessToken.php');

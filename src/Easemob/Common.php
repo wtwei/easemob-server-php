@@ -12,7 +12,7 @@ use Easemob\Error\Error;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
-class Base
+class Common
 {
     /**
      * 发送请求

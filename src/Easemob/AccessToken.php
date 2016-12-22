@@ -16,7 +16,7 @@ use Doctrine\Common\Cache\FilesystemCache;
  *
  * @package Easemob
  */
-class AccessToken extends Base
+class AccessToken extends Common
 {
     /**
      * Cache.
