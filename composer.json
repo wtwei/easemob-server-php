@@ -1,0 +1,30 @@
+{
+    "name": "wtwei/emchat-server-php",
+    "description": "环信SDK",
+    "keywords": [
+        "环信",
+        "easemob",
+        "easemob-sdk",
+        "sdk"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "kevin",
+            "email": "wutwei@qq.com"
+        }
+    ],
+    "require": {
+        "php":">=5.5.0",
+        "ext-curl": "*",
+        "guzzlehttp/guzzle": "^6.2",
+        "doctrine/cache": "^1.6"
+    },
+    "require-dev": {},
+    "minimum-stability" : "dev",
+    "autoload": {
+        "psr-4": {
+            "Easemob\\": "src/"
+        }
+    }
+}
