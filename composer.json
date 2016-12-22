@@ -1,8 +1,7 @@
 {
-    "name": "wtwei/emchat-server-php",
-    "description": "环信SDK",
+    "name": "wtwei/easemob-server-php",
+    "description": "Easemob SDK",
     "keywords": [
-        "环信",
         "easemob",
         "easemob-sdk",
         "sdk"
