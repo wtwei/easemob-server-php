@@ -14,22 +14,27 @@ use GuzzleHttp\Exception\RequestException;
 
 class Common
 {
+    protected $url;
+
     /**
      * 发送请求
      * @param $method
      * @param array $params
+     * @param $options
      * @return array|mixed
      * @throws Error
      */
-    public function request($method, $params = [])
+    protected function request($method, $params = [], $options = [])
     {
         $config = ['base_uri' => static::baseUrl()];
         $client = new Client($config);
-        $header = ['Content-Type' => 'application/json',
-                   'Accept' => 'application/json'];
+        $header = [
+            'Content-Type' => 'application/json',
+            'Accept'       => 'application/json',
+        ];
 
         if (static::className() != 'token') {
-            $token_obj = new AccessToken();
+            $token_obj               = new AccessToken();
             $token                   = $token_obj->getToken();
             $header['Authorization'] = "Bearer ${token}";
         }
@@ -41,9 +46,11 @@ class Common
             $data['form_params'] = $params;
         }
 
+        $options && $data = array_merge($data, $options);
+
         $body = [];
         try {
-            $res = $client->request($method, static::classUrl(), $data);
+            $res = $client->request($method, $this->url, $data);
             if ($res->getStatusCode() == 200) {
                 $body = \GuzzleHttp\json_decode($res->getBody(), 1);
             }
@@ -54,44 +61,83 @@ class Common
         return $body;
     }
 
+    protected function _retrieve($id, $options = null)
+    {
+        $this->url = $this->instanceUrl($id);
+
+        return $this->request('GET', null, $options);
+    }
+
+    /**
+     * 完整资源URL
+     * @param $id
+     * @return string
+     * @throws Error
+     */
+    public function instanceUrl($id)
+    {
+        $class = get_called_class();
+        if ($id === null) {
+            $message = "Could not determine which URL to request: "
+                . "$class instance has invalid ID: $id";
+            throw new Error($message, null);
+        }
+        $base = static::classUrl();
+        $extn = urlencode($id);
+        return "$base/$extn";
+    }
+
     /**
      * GET请求
      * @param $params
+     * @param $options
      * @return array|mixed
      */
-    public function get($params)
+    public function _all($params, $options = null)
     {
-        return $this->request('GET', $params);
+        $this->url = static::classUrl();
+        return $this->request('GET', $params, $options);
     }
 
     /**
      * POST请求
      * @param $params
+     * @param $options
      * @return array|mixed
      */
-    public function post($params)
+    protected function _create($params, $options = null)
     {
-        return $this->request('POST', $params);
+        $this->url = static::classUrl();
+        static::validateParams($params);
+
+        return $this->request('POST', $params, $options);
     }
 
     /**
      * PUT请求
+     * @param $id
      * @param $params
+     * @param $options
      * @return array|mixed
      */
-    public function put($params)
+    protected function _save($id, $params, $options = null)
     {
-        return $this->request('PUT', $params);
+        static::validateParams($params);
+        $this->url = $this->instanceUrl($id);
+        return $this->request('PUT', $params, $options);
     }
 
     /**
      * delete请求
+     * @param $id
      * @param $params
+     * @param $options
      * @return array|mixed
      */
-    public function delete($params)
+    protected function _delete($id, $params = null, $options = null)
     {
-        return $this->request('DELETE', $params);
+        $this->url = $this->instanceUrl($id);
+        return $this->request('DELETE', $params, $options);
     }
 
     /**
@@ -138,5 +184,14 @@ class Common
         $name  = urlencode($class);
         $name  = strtolower($name);
         return $name;
+    }
+
+    private static function validateParams($params = null)
+    {
+        if ($params && !is_array($params)) {
+            $message = "You must pass an array as the first argument to Pingpp API "
+                . "method calls.";
+            throw new Error($message);
+        }
     }
 }
