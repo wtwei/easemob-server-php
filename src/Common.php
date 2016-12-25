@@ -14,8 +14,6 @@ use GuzzleHttp\Exception\RequestException;
 
 class Common
 {
-    protected $url;
-
     /**
      * 发送请求
      * @param $method
@@ -24,7 +22,7 @@ class Common
      * @return array|mixed
      * @throws Error
      */
-    protected function request($method, $params = [], $options = [])
+    protected static function _request($method, $url, $params = [], $options = [])
     {
         $config = ['base_uri' => static::baseUrl()];
         $client = new Client($config);
@@ -33,39 +31,36 @@ class Common
             'Accept'       => 'application/json',
         ];
 
-        if (static::className() != 'token') {
-            $token_obj               = new AccessToken();
-            $token                   = $token_obj->getToken();
-            $header['Authorization'] = "Bearer ${token}";
-        }
+        $token_obj               = new AccessToken();
+        $token                   = $token_obj->getToken();
+        $header['Authorization'] = "Bearer ${token}";
 
         $data = ['connect_timeout' => 30, 'headers' => $header];
         if ($method == 'GET') {
             $data['query'] = $params;
         } else {
-            $data['form_params'] = $params;
+            $data['json'] = $params;
         }
 
         $options && $data = array_merge($data, $options);
 
         $body = [];
         try {
-            $res = $client->request($method, $this->url, $data);
-            if ($res->getStatusCode() == 200) {
-                $body = \GuzzleHttp\json_decode($res->getBody(), 1);
-            }
+            $res = $client->request($method, $url, $data);
+            $body = \GuzzleHttp\json_decode($res->getBody()->getContents(), 1);
         } catch (RequestException $e) {
-            throw new Error($e->getMessage(), -1);
+            $info = \GuzzleHttp\json_decode($e->getResponse()->getBody()->getContents(), 1);
+            throw new Error($info['error'], -1);
         }
 
         return $body;
     }
 
-    protected function _retrieve($id, $options = null)
+    protected static function _retrieve($id, $options = null)
     {
-        $this->url = $this->instanceUrl($id);
+        $url = static::instanceUrl($id);
 
-        return $this->request('GET', null, $options);
+        return static::_request('GET', $url, null, $options);
     }
 
     /**
@@ -74,7 +69,7 @@ class Common
      * @return string
      * @throws Error
      */
-    public function instanceUrl($id)
+    public static function instanceUrl($id)
     {
         $class = get_called_class();
         if ($id === null) {
@@ -93,10 +88,10 @@ class Common
      * @param $options
      * @return array|mixed
      */
-    public function _all($params, $options = null)
+    public static function _all($params, $options = null)
     {
-        $this->url = static::classUrl();
-        return $this->request('GET', $params, $options);
+        $url = static::classUrl();
+        return static::_request('GET', $url, $params, $options);
     }
 
     /**
@@ -105,12 +100,12 @@ class Common
      * @param $options
      * @return array|mixed
      */
-    protected function _create($params, $options = null)
+    protected static function _create($params, $options = null)
     {
-        $this->url = static::classUrl();
+        $url = static::classUrl();
         static::validateParams($params);
 
-        return $this->request('POST', $params, $options);
+        return static::_request('POST', $url, $params, $options);
     }
 
     /**
@@ -120,11 +115,11 @@ class Common
      * @param $options
      * @return array|mixed
      */
-    protected function _save($id, $params, $options = null)
+    protected static function _save($id, $params, $options = null)
     {
         static::validateParams($params);
-        $this->url = $this->instanceUrl($id);
-        return $this->request('PUT', $params, $options);
+        $url = static::instanceUrl($id);
+        return static::_request('PUT', $url, $params, $options);
     }
 
     /**
@@ -134,10 +129,10 @@ class Common
      * @param $options
      * @return array|mixed
      */
-    protected function _delete($id, $params = null, $options = null)
+    protected static function _delete($id, $params = null, $options = null)
     {
-        $this->url = $this->instanceUrl($id);
-        return $this->request('DELETE', $params, $options);
+        $url = static::instanceUrl($id);
+        return static::_request('DELETE', $url, $params, $options);
     }
 
     /**
@@ -147,7 +142,7 @@ class Common
      */
     public static function baseUrl()
     {
-        return Im::$gatewayUrl . Im::$orgName . '/' . Im::$appName;
+        return Im::$gatewayUrl . Im::$orgName . '/' . Im::$appName . '/';
     }
 
     /**
@@ -158,7 +153,7 @@ class Common
     public static function classUrl()
     {
         $base = static::className();
-        return "/${base}" . ($base == 'token' ?: 's');
+        return "${base}" . ($base == 'token' ?: 's');
     }
 
     /**

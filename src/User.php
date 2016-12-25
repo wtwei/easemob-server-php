@@ -23,7 +23,7 @@ class User extends Common
         $params = ['username' => $username, 'password' => $password];
         $nickname && $params['nickname'] = $nickname;
 
-        return self::create($params);
+        return self::_create($params);
     }
 
     /**

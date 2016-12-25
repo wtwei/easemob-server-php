@@ -10,6 +10,9 @@ namespace Easemob;
 
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\FilesystemCache;
+use Easemob\Error\Error;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 
 /**
  * Class Token
@@ -55,8 +58,8 @@ class AccessToken extends Common
             $token = $this->getTokenFromServer();
 
             // 防止误差^_^
-            $this->getCache()->save($cacheKey, $token['access_token'], $token['expires_in'] - 1500);
-
+            $ret = $this->getCache()->save($cacheKey, $token['access_token'], $token['expires_in'] - 1500);
+            
             return $token['access_token'];
         }
 
@@ -70,13 +73,13 @@ class AccessToken extends Common
             'client_id'     => Im::$clientId,
             'client_secret' => Im::$clientSecret,
         ];
-        $result = self::post($data);
-        $token  = '';
-        if (isset($result['access_token'])) {
-            $token = $result['access_token'];
-        }
+        $result = self::request('POST', 'token', $data);
+        // $token  = '';
+        // if (isset($result['access_token'])) {
+        //     $token = $result['access_token'];
+        // }
 
-        return $token;
+        return $result;
     }
 
     /**
@@ -115,5 +118,42 @@ class AccessToken extends Common
         }
 
         return $this->cacheKey;
+    }
+
+    /**
+     * 发送请求
+     * @param $method
+     * @param array $params
+     * @param $options
+     * @return array|mixed
+     * @throws Error
+     */
+    protected static function request($method, $url, $params = [], $options = [])
+    {
+        $config = ['base_uri' => static::baseUrl()];
+        $client = new Client($config);
+        $header = [
+            'Content-Type' => 'application/json',
+            'Accept'       => 'application/json',
+        ];
+
+        $data = ['connect_timeout' => 30, 'headers' => $header];
+        if ($method == 'GET') {
+            $data['query'] = $params;
+        } else {
+            $data['json'] = $params;
+        }
+
+        $options && $data = array_merge($data, $options);
+
+        $body = [];
+        try {
+            $res = $client->request($method, $url, $data);
+            $body = \GuzzleHttp\json_decode($res->getBody()->getContents(), 1);
+        } catch (RequestException $e) {
+            throw new Error($e->getMessage(), -1);
+        }
+
+        return $body;
     }
 }
