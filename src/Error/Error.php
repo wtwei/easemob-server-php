@@ -17,13 +17,10 @@ class Error extends \Exception
         parent::__construct($this->_getMessage($message), $code, $previous);
     }
 
-    private function _getMessage($msg){
+    // TODO 异常信息过滤
+    private function _getMessage($msg)
+    {
         $message = $msg;
-        switch ($msg){
-            case 'duplicate_unique_property_exists':
-                $message = '即时通讯用户已存在';
-                break;
-        }
 
         return $message;
     }
